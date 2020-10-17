@@ -791,20 +791,19 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     STPUserInformation *prefilledInformation = [self userInformation:options[@"prefilledInformation"]];
     NSString *nextPublishableKey = options[@"publishableKey"] ? options[@"publishableKey"] : publishableKey;
     UIModalPresentationStyle formPresentation = [self formPresentation:options[@"presentation"]];
-    STPTheme *theme = [self formTheme:options[@"theme"]];
 
     STPPaymentConfiguration *configuration = [[STPPaymentConfiguration alloc] init];
     [configuration setRequiredBillingAddressFields:requiredBillingAddressFields];
     [configuration setCompanyName:companyName];
     [configuration setPublishableKey:nextPublishableKey];
 
-    STPAddCardViewController *vc = [[STPAddCardViewController alloc] initWithConfiguration:configuration theme:theme];
+    STPAddCardViewController *vc = [[STPAddCardViewController alloc] initWithConfiguration:configuration theme:[self themeForDictionary:options[@"theme"]]];
     vc.delegate = self;
     vc.prefilledInformation = prefilledInformation;
     // STPAddCardViewController must be shown inside a UINavigationController.
     UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:vc];
     [navigationController setModalPresentationStyle:formPresentation];
-    navigationController.navigationBar.stp_theme = theme;
+    navigationController.navigationBar.stp_theme = [self themeForDictionary:options[@"nav_bar_theme"]];
     // move to the end of main queue
     // allow the execution of hiding modal
     // to be finished first
@@ -1806,7 +1805,7 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     return address;
 }
 
-- (STPTheme *)formTheme:(NSDictionary*)options {
+- (STPTheme *)themeForDictionary:(NSDictionary*)options {
     STPTheme *theme = [[STPTheme alloc] init];
 
     [theme setPrimaryBackgroundColor:[RCTConvert UIColor:options[@"primaryBackgroundColor"]]];

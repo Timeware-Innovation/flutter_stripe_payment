@@ -16,3 +16,4 @@ export 'setup_intent_result.dart';
 export 'source.dart';
 export 'source_params.dart';
 export 'token.dart';
+export 'ios_theme.dart';
