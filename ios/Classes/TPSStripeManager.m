@@ -8,6 +8,8 @@
 
 #import "TPSStripeManager.h"
 #import <Stripe/Stripe.h>
+#import <Flutter/Flutter.h>
+#import <CoreText/CoreText.h>
 
 #import "TPSError.h"
 #import "TPSStripeManager+Constants.h"
@@ -268,7 +270,9 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     void (^applePayCompletion)(PKPaymentAuthorizationStatus);
     NSError *applePayStripeError;
 }
+@property (nonatomic) BOOL customFontsLoaded;
 @end
+
 @implementation StripeModule
 
 #define RCTPresentedViewController() [[[UIApplication sharedApplication] keyWindow] rootViewController]
@@ -1815,9 +1819,62 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     [theme setAccentColor:[RCTConvert UIColor:options[@"accentColor"]]];
     [theme setErrorColor:[RCTConvert UIColor:options[@"errorColor"]]];
     [theme setErrorColor:[RCTConvert UIColor:options[@"errorColor"]]];
-    // TODO: process font vars
+    
+    NSDictionary *const fontDict = options[@"font"];
+    NSDictionary *const emphasisFontDict = options[@"emphasisFont"];
+    
+    NSMutableArray<NSDictionary<NSString *, NSString *> *> *const fontDictionaries = [NSMutableArray array];
+    if (fontDict) [fontDictionaries addObject:fontDict];
+    if (emphasisFontDict) [fontDictionaries addObject:emphasisFontDict];
+    [self loadCustomFontsIfNeeded:fontDictionaries];
+
+    theme.font = [self.class fontForDictionary:fontDict];
+    theme.emphasisFont = [self.class fontForDictionary:emphasisFontDict];
 
     return theme;
+}
+
+/// @see https://medium.com/@tonyowen/sharing-fonts-between-flutter-and-native-a9d98517f372
+- (void)loadCustomFontsIfNeeded:(nonnull NSArray<NSDictionary *> *)fontDictionaries {
+    if (self.customFontsLoaded) {
+        return;
+    }
+    
+    FlutterViewController *const viewController = (FlutterViewController *)UIApplication.sharedApplication.keyWindow.rootViewController;
+    if (![viewController isKindOfClass:FlutterViewController.class]) {
+        return;
+    }
+    
+    for (NSDictionary *fontDictionary in fontDictionaries) {
+        NSString *const asset = fontDictionary[@"asset"];
+        
+        NSString *const key = [viewController lookupKeyForAsset:asset];
+        if (key.length == 0) continue;
+        
+        NSString *const path = [NSBundle.mainBundle pathForResource:key ofType:nil];
+        if (path.length == 0) continue;
+        
+        NSData *const data = [NSData dataWithContentsOfFile:path];
+        if (data.length == 0) continue;
+        
+        CGDataProviderRef const provider = CGDataProviderCreateWithCFData((CFDataRef)data);
+        if (!provider) continue;
+        
+        CGFontRef fontRef = CGFontCreateWithDataProvider(provider);
+        
+        if (fontRef) {
+            CTFontManagerRegisterGraphicsFont(fontRef, NULL);
+            CGFontRelease(fontRef);
+        }
+        
+        CGDataProviderRelease(provider);
+    } // for
+    
+    self.customFontsLoaded = YES;
+}
+
++ (nullable UIFont *)fontForDictionary:(NSDictionary *)dict {
+    return dict ? [UIFont fontWithName:dict[@"name"] size:[dict[@"size"] floatValue]] : nil;
 }
 
 - (UIModalPresentationStyle)formPresentation:(NSString*)inputType {

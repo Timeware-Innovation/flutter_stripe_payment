@@ -29,13 +29,13 @@
             location = "group:TPSStripeManager+Constants.h">
          </FileRef>
          <FileRef
+            location = "group:TPSStripeManager.m">
+         </FileRef>
+         <FileRef
             location = "group:StripePaymentPlugin.h">
          </FileRef>
          <FileRef
             location = "group:TPSError.m">
-         </FileRef>
-         <FileRef
-            location = "group:TPSStripeManager.m">
          </FileRef>
          <FileRef
             location = "group:RCTConvert.m">

@@ -11,6 +11,8 @@ class CardFormPaymentRequest {
   /// * [secondaryBackgroundColor] sets navigation bar tint color
   /// * [primaryForegroundColor] sets title color
   /// * [accentColor] sets buttons color
+  /// * [font] sets Cancel button font
+  /// * [emphasisFont] sets title and done button font
   final IOSTheme iOSNavigationBarTheme;
 
   CardFormPaymentRequest({
