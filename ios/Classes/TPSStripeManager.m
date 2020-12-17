@@ -8,6 +8,8 @@
 
 #import "TPSStripeManager.h"
 #import <Stripe/Stripe.h>
+#import <Flutter/Flutter.h>
+#import <CoreText/CoreText.h>
 
 #import "TPSError.h"
 #import "TPSStripeManager+Constants.h"
@@ -263,11 +265,14 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     RCTPromiseRejectBlock promiseRejector;
 
     BOOL requestIsCompleted;
+    BOOL applePayShouldCreatePaymentMethod;
 
     void (^applePayCompletion)(PKPaymentAuthorizationStatus);
     NSError *applePayStripeError;
 }
+@property (nonatomic) BOOL customFontsLoaded;
 @end
+
 @implementation StripeModule
 
 #define RCTPresentedViewController() [[[UIApplication sharedApplication] keyWindow] rootViewController]
@@ -332,7 +337,7 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     NSArray <NSString *> *paymentNetworksStrings = [StripeModule applePaySupportedPaymentNetworksStrings];
 
     NSArray <PKPaymentNetwork> *networks = [self paymentNetworks:paymentNetworksStrings];
-    resolve([PKPaymentAuthorizationViewController canMakePaymentsUsingNetworks:networks] ? paymentNetworksStrings : nil);
+    resolve([PKPaymentAuthorizationViewController canMakePaymentsUsingNetworks:networks] ? paymentNetworksStrings : @[]);
 }
 
 
@@ -790,20 +795,19 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     STPUserInformation *prefilledInformation = [self userInformation:options[@"prefilledInformation"]];
     NSString *nextPublishableKey = options[@"publishableKey"] ? options[@"publishableKey"] : publishableKey;
     UIModalPresentationStyle formPresentation = [self formPresentation:options[@"presentation"]];
-    STPTheme *theme = [self formTheme:options[@"theme"]];
 
     STPPaymentConfiguration *configuration = [[STPPaymentConfiguration alloc] init];
     [configuration setRequiredBillingAddressFields:requiredBillingAddressFields];
     [configuration setCompanyName:companyName];
     [configuration setPublishableKey:nextPublishableKey];
 
-    STPAddCardViewController *vc = [[STPAddCardViewController alloc] initWithConfiguration:configuration theme:theme];
+    STPAddCardViewController *vc = [[STPAddCardViewController alloc] initWithConfiguration:configuration theme:[self themeForDictionary:options[@"theme"]]];
     vc.delegate = self;
     vc.prefilledInformation = prefilledInformation;
     // STPAddCardViewController must be shown inside a UINavigationController.
     UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:vc];
     [navigationController setModalPresentationStyle:formPresentation];
-    navigationController.navigationBar.stp_theme = theme;
+    navigationController.navigationBar.stp_theme = [self themeForDictionary:options[@"nav_bar_theme"]];
     // move to the end of main queue
     // allow the execution of hiding modal
     // to be finished first
@@ -813,9 +817,28 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
 }
 
 -(void)paymentRequestWithApplePay:(NSArray *)items
-                  withOptions:(NSDictionary *)options
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject {
+                      withOptions:(NSDictionary *)options
+                         resolver:(RCTPromiseResolveBlock)resolve
+                         rejecter:(RCTPromiseRejectBlock)reject {
+    applePayShouldCreatePaymentMethod = NO;
+    
+    [self startApplePay:items withOptions:options resolver:resolve rejecter:reject];
+}
+
+-(void)paymentMethodFromApplePay:(NSArray *)items
+                     withOptions:(NSDictionary *)options
+                        resolver:(RCTPromiseResolveBlock)resolve
+                        rejecter:(RCTPromiseRejectBlock)reject {
+    applePayShouldCreatePaymentMethod = YES;
+    
+    [self startApplePay:items withOptions:options resolver:resolve rejecter:reject];
+}
+
+-(void)startApplePay:(NSArray *)items
+    withOptions:(NSDictionary *)options
+    resolver:(RCTPromiseResolveBlock)resolve
+    rejecter:(RCTPromiseRejectBlock)reject {
+
     if(!requestIsCompleted) {
         NSDictionary *error = [errorCodes valueForKey:kErrorKeyBusy];
         reject(error[kErrorKeyCode], error[kErrorKeyDescription], nil);
@@ -863,21 +886,15 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     [paymentRequest setShippingMethods:shippingMethods];
     [paymentRequest setShippingType:shippingType];
 
-    if ([self canSubmitPaymentRequest:paymentRequest rejecter:reject]) {
-        PKPaymentAuthorizationViewController *paymentAuthorizationVC = [[PKPaymentAuthorizationViewController alloc] initWithPaymentRequest:paymentRequest];
-        paymentAuthorizationVC.delegate = self;
+    PKPaymentAuthorizationViewController *paymentAuthorizationVC = [[PKPaymentAuthorizationViewController alloc] initWithPaymentRequest:paymentRequest];
+    paymentAuthorizationVC.delegate = self;
 
-        // move to the end of main queue
-        // allow the execution of hiding modal
-        // to be finished first
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [RCTPresentedViewController() presentViewController:paymentAuthorizationVC animated:YES completion:nil];
-        });
-    } else {
-        // There is a problem with your Apple Pay configuration.
-        [self resetPromiseCallbacks];
-        requestIsCompleted = YES;
-    }
+    // move to the end of main queue
+    // allow the execution of hiding modal
+    // to be finished first
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [RCTPresentedViewController() presentViewController:paymentAuthorizationVC animated:YES completion:nil];
+    });
 }
 
 -(void)openApplePaySetup {
@@ -1240,27 +1257,52 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     applePayCompletion = completion;
 
     STPAPIClient *stripeAPIClient = [self newAPIClient];
+    
+    if (applePayShouldCreatePaymentMethod) {
+        [stripeAPIClient createPaymentMethodWithPayment:payment completion:^(STPPaymentMethod * _Nullable paymentMethod, NSError * _Nullable error) {
+            self->requestIsCompleted = YES;
 
-    [stripeAPIClient createTokenWithPayment:payment completion:^(STPToken * _Nullable token, NSError * _Nullable error) {
-        self->requestIsCompleted = YES;
+            if (error) {
+                // Save for deffered use
+                self->applePayStripeError = error;
+                [self resolveApplePayCompletion:PKPaymentAuthorizationStatusFailure];
+            } else {
+                NSDictionary *result = [self convertPaymentMethod:paymentMethod];
+//                NSDictionary *extra = @{
+//                                        @"billingContact": [self contactDetails:payment.billingContact] ?: [NSNull null],
+//                                        @"shippingContact": [self contactDetails:payment.shippingContact] ?: [NSNull null],
+//                                        @"shippingMethod": [self shippingDetails:payment.shippingMethod] ?: [NSNull null]
+//                                        };
+//
+//                [result setValue:extra forKey:@"extra"];
 
-        if (error) {
-            // Save for deffered use
-            self->applePayStripeError = error;
-            [self resolveApplePayCompletion:PKPaymentAuthorizationStatusFailure];
-        } else {
-            NSDictionary *result = [self convertTokenObject:token];
-            NSDictionary *extra = @{
-                                    @"billingContact": [self contactDetails:payment.billingContact] ?: [NSNull null],
-                                    @"shippingContact": [self contactDetails:payment.shippingContact] ?: [NSNull null],
-                                    @"shippingMethod": [self shippingDetails:payment.shippingMethod] ?: [NSNull null]
-                                    };
+                [self resolvePromise:result];
+            }
 
-            [result setValue:extra forKey:@"extra"];
+        }];
 
-            [self resolvePromise:result];
-        }
-    }];
+    } else {
+        [stripeAPIClient createTokenWithPayment:payment completion:^(STPToken * _Nullable token, NSError * _Nullable error) {
+            self->requestIsCompleted = YES;
+
+            if (error) {
+                // Save for deffered use
+                self->applePayStripeError = error;
+                [self resolveApplePayCompletion:PKPaymentAuthorizationStatusFailure];
+            } else {
+                NSDictionary *result = [self convertTokenObject:token];
+                NSDictionary *extra = @{
+                                        @"billingContact": [self contactDetails:payment.billingContact] ?: [NSNull null],
+                                        @"shippingContact": [self contactDetails:payment.shippingContact] ?: [NSNull null],
+                                        @"shippingMethod": [self shippingDetails:payment.shippingMethod] ?: [NSNull null]
+                                        };
+
+                [result setValue:extra forKey:@"extra"];
+
+                [self resolvePromise:result];
+            }
+        }];
+    }
 }
 
 
@@ -1767,7 +1809,7 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     return address;
 }
 
-- (STPTheme *)formTheme:(NSDictionary*)options {
+- (STPTheme *)themeForDictionary:(NSDictionary*)options {
     STPTheme *theme = [[STPTheme alloc] init];
 
     [theme setPrimaryBackgroundColor:[RCTConvert UIColor:options[@"primaryBackgroundColor"]]];
@@ -1777,9 +1819,62 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     [theme setAccentColor:[RCTConvert UIColor:options[@"accentColor"]]];
     [theme setErrorColor:[RCTConvert UIColor:options[@"errorColor"]]];
     [theme setErrorColor:[RCTConvert UIColor:options[@"errorColor"]]];
-    // TODO: process font vars
+    
+    NSDictionary *const fontDict = options[@"font"];
+    NSDictionary *const emphasisFontDict = options[@"emphasisFont"];
+    
+    NSMutableArray<NSDictionary<NSString *, NSString *> *> *const fontDictionaries = [NSMutableArray array];
+    if (fontDict) [fontDictionaries addObject:fontDict];
+    if (emphasisFontDict) [fontDictionaries addObject:emphasisFontDict];
+    [self loadCustomFontsIfNeeded:fontDictionaries];
+
+    theme.font = [self.class fontForDictionary:fontDict];
+    theme.emphasisFont = [self.class fontForDictionary:emphasisFontDict];
 
     return theme;
+}
+
+/// @see https://medium.com/@tonyowen/sharing-fonts-between-flutter-and-native-a9d98517f372
+- (void)loadCustomFontsIfNeeded:(nonnull NSArray<NSDictionary *> *)fontDictionaries {
+    if (self.customFontsLoaded) {
+        return;
+    }
+    
+    FlutterViewController *const viewController = (FlutterViewController *)UIApplication.sharedApplication.keyWindow.rootViewController;
+    if (![viewController isKindOfClass:FlutterViewController.class]) {
+        return;
+    }
+    
+    for (NSDictionary *fontDictionary in fontDictionaries) {
+        NSString *const asset = fontDictionary[@"asset"];
+        
+        NSString *const key = [viewController lookupKeyForAsset:asset];
+        if (key.length == 0) continue;
+        
+        NSString *const path = [NSBundle.mainBundle pathForResource:key ofType:nil];
+        if (path.length == 0) continue;
+        
+        NSData *const data = [NSData dataWithContentsOfFile:path];
+        if (data.length == 0) continue;
+        
+        CGDataProviderRef const provider = CGDataProviderCreateWithCFData((CFDataRef)data);
+        if (!provider) continue;
+        
+        CGFontRef fontRef = CGFontCreateWithDataProvider(provider);
+        
+        if (fontRef) {
+            CTFontManagerRegisterGraphicsFont(fontRef, NULL);
+            CGFontRelease(fontRef);
+        }
+        
+        CGDataProviderRelease(provider);
+    } // for
+    
+    self.customFontsLoaded = YES;
+}
+
++ (nullable UIFont *)fontForDictionary:(NSDictionary *)dict {
+    return dict ? [UIFont fontWithName:dict[@"name"] size:[dict[@"size"] floatValue]] : nil;
 }
 
 - (UIModalPresentationStyle)formPresentation:(NSString*)inputType {
@@ -1819,12 +1914,73 @@ void initializeTPSPaymentNetworksWithConditionalMappings() {
     dispatch_once(&onceToken, ^{
         NSMutableDictionary *mutableMap = [@{} mutableCopy];
 
+        
         if ((&PKPaymentNetworkAmex) != NULL) {
             mutableMap[TPSPaymentNetworkAmex] = PKPaymentNetworkAmex;
+        }
+        
+        if ((&PKPaymentNetworkChinaUnionPay) != NULL) {
+            mutableMap[TPSPaymentNetworkChinaUnionPay] = PKPaymentNetworkChinaUnionPay;
         }
 
         if ((&PKPaymentNetworkDiscover) != NULL) {
             mutableMap[TPSPaymentNetworkDiscover] = PKPaymentNetworkDiscover;
+        }
+
+        if (@available(iOS 12.0, *)) {
+            if ((&PKPaymentNetworkEftpos) != NULL) {
+                mutableMap[TPSPaymentNetworkEftpos] = PKPaymentNetworkEftpos;
+            }
+
+            if ((&PKPaymentNetworkElectron) != NULL) {
+                mutableMap[TPSPaymentNetworkElectron] = PKPaymentNetworkElectron;
+            }
+
+        }
+
+        if (@available(iOS 12.1.1, *)) {
+            if ((&PKPaymentNetworkElo) != NULL) {
+                mutableMap[TPSPaymentNetworkElo] = PKPaymentNetworkElo;
+            }
+            if ((&PKPaymentNetworkMada) != NULL) {
+                mutableMap[TPSPaymentNetworkIDCredit] = PKPaymentNetworkMada;
+            }
+        }
+
+        if ((&PKPaymentNetworkInterac) != NULL) {
+            mutableMap[TPSPaymentNetworkIDCredit] = PKPaymentNetworkInterac;
+        }
+        if (@available(iOS 10.1, *)) {
+            if ((&PKPaymentNetworkJCB) != NULL) {
+                mutableMap[TPSPaymentNetworkIDCredit] = PKPaymentNetworkJCB;
+            }
+        } else {
+            // Fallback on earlier versions
+        }
+        
+        if (@available(iOS 12.0, *)) {
+            if ((&PKPaymentNetworkMaestro) != NULL) {
+                mutableMap[TPSPaymentNetworkIDCredit] = PKPaymentNetworkMaestro;
+            }
+        } else {
+            // Fallback on earlier versions
+        }
+        if ((&PKPaymentNetworkPrivateLabel) != NULL) {
+            mutableMap[TPSPaymentNetworkPrivateLabel] = PKPaymentNetworkPrivateLabel;
+        }
+        if (@available(iOS 10.3, *)) {
+            if ((&PKPaymentNetworkQuicPay) != NULL) {
+                mutableMap[TPSPaymentNetworkQuicPay] = PKPaymentNetworkQuicPay;
+            }
+        } else {
+            // Fallback on earlier versions
+        }
+        if (@available(iOS 10.1, *)) {
+            if ((&PKPaymentNetworkSuica) != NULL) {
+                mutableMap[TPSPaymentNetworkQuicPay] = PKPaymentNetworkSuica;
+            }
+        } else {
+            // Fallback on earlier versions
         }
 
         if ((&PKPaymentNetworkMasterCard) != NULL) {

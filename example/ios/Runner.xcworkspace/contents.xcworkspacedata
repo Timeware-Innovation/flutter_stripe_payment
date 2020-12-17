@@ -1,6 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
+   <Group
+      location = "group:../../ios"
+      name = "ios">
+      <FileRef
+         location = "group:stripe_payment.podspec">
+      </FileRef>
+      <Group
+         location = "group:Classes"
+         name = "Classes">
+         <FileRef
+            location = "group:TPSError.h">
+         </FileRef>
+         <FileRef
+            location = "group:StripePaymentPlugin.m">
+         </FileRef>
+         <FileRef
+            location = "group:TPSStripeManager+Constants.m">
+         </FileRef>
+         <FileRef
+            location = "group:RCTConvert.h">
+         </FileRef>
+         <FileRef
+            location = "group:TPSStripeManager.h">
+         </FileRef>
+         <FileRef
+            location = "group:TPSStripeManager+Constants.h">
+         </FileRef>
+         <FileRef
+            location = "group:TPSStripeManager.m">
+         </FileRef>
+         <FileRef
+            location = "group:StripePaymentPlugin.h">
+         </FileRef>
+         <FileRef
+            location = "group:TPSError.m">
+         </FileRef>
+         <FileRef
+            location = "group:RCTConvert.m">
+         </FileRef>
+      </Group>
+      <Group
+         location = "group:Assets"
+         name = "Assets">
+      </Group>
+   </Group>
    <FileRef
       location = "group:Runner.xcodeproj">
    </FileRef>
