@@ -45,6 +45,7 @@ class StripeDialog : DialogFragment() {
         view.findViewById<View>(R.id.buttonSave)?.setOnClickListener {
             getToken()
         }
+        view.findViewById<CardMultilineWidget>(R.id.card_input_widget).setShouldShowPostalCode(false)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
