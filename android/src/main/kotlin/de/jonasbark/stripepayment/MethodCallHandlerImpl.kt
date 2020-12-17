@@ -1,4 +1,4 @@
-package de.jonasbark.stripe_payment
+package de.jonasbark.stripepayment
 
 import android.app.Activity
 import android.content.Context

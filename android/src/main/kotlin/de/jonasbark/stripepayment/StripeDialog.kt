@@ -1,4 +1,4 @@
-package de.jonasbark.stripe_payment
+package de.jonasbark.stripepayment
 
 import android.app.DialogFragment
 import android.content.DialogInterface

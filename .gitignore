@@ -3,5 +3,19 @@
 
 .packages
 .pub/
+.dart_tool/
+pubspec.lock
+flutter_export_environment.sh
+
+examples/all_plugins/pubspec.yaml
+
+Podfile.lock
+Pods/
+.symlinks/
+**/Flutter/App.framework/
+**/Flutter/ephemeral/
+**/Flutter/Flutter.framework/
+**/Flutter/Generated.xcconfig
+**/Flutter/flutter_assets/
 
 build/
