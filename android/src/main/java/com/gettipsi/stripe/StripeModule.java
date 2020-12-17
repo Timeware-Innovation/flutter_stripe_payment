@@ -52,6 +52,7 @@ import com.stripe.android.model.ConfirmSetupIntentParams;
 import com.stripe.android.model.PaymentMethod;
 import com.stripe.android.model.PaymentMethodCreateParams;
 import com.stripe.android.model.Source;
+import com.stripe.android.model.Source.Redirect;
 import com.stripe.android.model.SourceParams;
 import com.stripe.android.model.StripeIntent;
 import com.stripe.android.model.Token;
@@ -101,17 +102,17 @@ public class StripeModule {
   private ReadableMap mErrorCodes;
 
   private final PluginRegistry.ActivityResultListener activityResultListener =
-      (requestCode, resultCode, data) -> {
-        if (activity != null) {
-          return getPayFlow().onActivityResult(activity, requestCode, resultCode, data);
-        }
-        return false;
-      };
+          (requestCode, resultCode, data) -> {
+            if (activity != null) {
+              return getPayFlow().onActivityResult(activity, requestCode, resultCode, data);
+            }
+            return false;
+          };
 
   public StripeModule(
-      @NotNull Context applicationContext,
-      @Nullable Activity activity,
-      ActivityRegistry activityRegistry) {
+          @NotNull Context applicationContext,
+          @Nullable Activity activity,
+          ActivityRegistry activityRegistry) {
     this.applicationContext = applicationContext;
     this.activity = activity;
     this.activityRegistry = activityRegistry;
@@ -138,8 +139,8 @@ public class StripeModule {
 
     if (newAndroidPayMode != null) {
       ArgCheck.isTrue(
-          ANDROID_PAY_MODE_TEST.equals(newAndroidPayMode)
-              || ANDROID_PAY_MODE_PRODUCTION.equals(newAndroidPayMode));
+              ANDROID_PAY_MODE_TEST.equals(newAndroidPayMode)
+                      || ANDROID_PAY_MODE_PRODUCTION.equals(newAndroidPayMode));
 
       getPayFlow().setEnvironment(androidPayModeToEnvironment(newAndroidPayMode));
     }
@@ -161,8 +162,8 @@ public class StripeModule {
   private static int androidPayModeToEnvironment(@NonNull String androidPayMode) {
     ArgCheck.notEmptyString(androidPayMode);
     return ANDROID_PAY_MODE_TEST.equals(androidPayMode.toLowerCase())
-        ? WalletConstants.ENVIRONMENT_TEST
-        : WalletConstants.ENVIRONMENT_PRODUCTION;
+            ? WalletConstants.ENVIRONMENT_TEST
+            : WalletConstants.ENVIRONMENT_PRODUCTION;
   }
 
   @ReactMethod
@@ -197,20 +198,20 @@ public class StripeModule {
       ArgCheck.notEmptyString(mPublicKey);
 
       mStripe.createCardToken(
-          createCard(cardData),
-          null,
-          new ApiResultCallback<Token>() {
-            @Override
-            public void onSuccess(Token token) {
-              promise.resolve(convertTokenToWritableMap(token));
-            }
+              createCard(cardData),
+              null,
+              new ApiResultCallback<Token>() {
+                @Override
+                public void onSuccess(Token token) {
+                  promise.resolve(convertTokenToWritableMap(token));
+                }
 
-            @Override
-            public void onError(@NotNull Exception error) {
-              error.printStackTrace();
-              promise.reject(toErrorCode(error), error.getMessage());
-            }
-          });
+                @Override
+                public void onError(@NotNull Exception error) {
+                  error.printStackTrace();
+                  promise.reject(toErrorCode(error), error.getMessage());
+                }
+              });
     } catch (Exception e) {
       promise.reject(toErrorCode(e), e.getMessage());
     }
@@ -223,18 +224,18 @@ public class StripeModule {
       ArgCheck.notEmptyString(mPublicKey);
 
       mStripe.createBankAccountToken(
-          createBankAccountTokenParams(accountData),
-          null,
-          new ApiResultCallback<Token>() {
-            public void onSuccess(Token token) {
-              promise.resolve(convertTokenToWritableMap(token));
-            }
+              createBankAccountTokenParams(accountData),
+              null,
+              new ApiResultCallback<Token>() {
+                public void onSuccess(Token token) {
+                  promise.resolve(convertTokenToWritableMap(token));
+                }
 
-            public void onError(@NonNull Exception error) {
-              error.printStackTrace();
-              promise.reject(toErrorCode(error), error.getMessage());
-            }
-          });
+                public void onError(@NonNull Exception error) {
+                  error.printStackTrace();
+                  promise.reject(toErrorCode(error), error.getMessage());
+                }
+              });
     } catch (Exception e) {
       promise.reject(toErrorCode(e), e.getMessage());
     }
@@ -249,10 +250,10 @@ public class StripeModule {
       final StripeDialog cardDialog = StripeDialog.newInstance("");
       cardDialog.setStripeInstance(mStripe);
       cardDialog.setTokenListener(
-          paymentMethod -> {
-            promise.resolve(Converters.convertPaymentMethodToWritableMap(paymentMethod));
-            return Unit.INSTANCE;
-          });
+              paymentMethod -> {
+                promise.resolve(Converters.convertPaymentMethodToWritableMap(paymentMethod));
+                return Unit.INSTANCE;
+              });
       cardDialog.setOnCancelListener(dialog -> promise.reject(CANCELLED, CANCELLED));
       cardDialog.show(currentActivity.getFragmentManager(), "AddNewCard");
     } catch (Exception e) {
@@ -272,98 +273,98 @@ public class StripeModule {
 
   private void attachPaymentResultActivityListener(final Promise promise) {
     final ActivityResultListener ael =
-        (requestCode, resultCode, data) ->
-            mStripe.onPaymentResult(
-                requestCode,
-                data,
-                new ApiResultCallback<PaymentIntentResult>() {
-                  @Override
-                  public void onSuccess(@NonNull PaymentIntentResult result) {
-                    StripeIntent.Status resultingStatus = result.getIntent().getStatus();
+            (requestCode, resultCode, data) ->
+                    mStripe.onPaymentResult(
+                            requestCode,
+                            data,
+                            new ApiResultCallback<PaymentIntentResult>() {
+                              @Override
+                              public void onSuccess(@NonNull PaymentIntentResult result) {
+                                StripeIntent.Status resultingStatus = result.getIntent().getStatus();
 
-                    if (Succeeded.equals(resultingStatus)
-                        || RequiresCapture.equals(resultingStatus)
-                        || RequiresConfirmation.equals(resultingStatus)) {
-                      promise.resolve(convertPaymentIntentResultToWritableMap(result));
-                    } else {
-                      if (Canceled.equals(resultingStatus)
-                          || RequiresAction.equals(resultingStatus)) {
-                        promise.reject(CANCELLED, CANCELLED); // TODO - normalize the message
-                      } else {
-                        promise.reject(FAILED, FAILED);
-                      }
-                    }
-                  }
+                                if (Succeeded.equals(resultingStatus)
+                                        || RequiresCapture.equals(resultingStatus)
+                                        || RequiresConfirmation.equals(resultingStatus)) {
+                                  promise.resolve(convertPaymentIntentResultToWritableMap(result));
+                                } else {
+                                  if (Canceled.equals(resultingStatus)
+                                          || RequiresAction.equals(resultingStatus)) {
+                                    promise.reject(CANCELLED, CANCELLED); // TODO - normalize the message
+                                  } else {
+                                    promise.reject(FAILED, FAILED);
+                                  }
+                                }
+                              }
 
-                  @Override
-                  public void onError(@NonNull Exception e) {
-                    e.printStackTrace();
-                    promise.reject(toErrorCode(e), e.getMessage());
-                  }
-                });
+                              @Override
+                              public void onError(@NonNull Exception e) {
+                                e.printStackTrace();
+                                promise.reject(toErrorCode(e), e.getMessage());
+                              }
+                            });
 
     activityRegistry.addListener(ael);
 
     promise.setWhenComplete(
-        () -> {
-          if (activityRegistry.removeListener(ael)) {
-            hasSetupResultListener.set(false);
-          }
-        });
+            () -> {
+              if (activityRegistry.removeListener(ael)) {
+                hasSetupResultListener.set(false);
+              }
+            });
   }
 
   private AtomicBoolean hasSetupResultListener = new AtomicBoolean(false);
 
   private void attachSetupResultActivityListener(final Promise promise) {
     ActivityResultListener ael =
-        (requestCode, resultCode, data) ->
-            mStripe.onSetupResult(
-                requestCode,
-                data,
-                new ApiResultCallback<SetupIntentResult>() {
-                  @Override
-                  public void onSuccess(@NonNull SetupIntentResult result) {
-                    try {
-                      switch (result.getIntent().getStatus()) {
-                        case Canceled:
-                          // The Setup Intent was canceled, so reject the promise with a predefined
-                          // code.
-                          promise.reject(CANCELLED, "The SetupIntent was canceled by the user.");
-                          break;
-                        case RequiresAction:
-                        case RequiresPaymentMethod:
-                          promise.reject(AUTHENTICATION_FAILED, "The user failed authentication.");
-                          break;
-                        case Succeeded:
-                          promise.resolve(convertSetupIntentResultToWritableMap(result));
-                          break;
-                        case RequiresCapture:
-                        case RequiresConfirmation:
-                        default:
-                          promise.reject(UNEXPECTED, "Unexpected state");
-                      }
-                    } catch (Exception e) {
-                      Log.e(TAG, "Unexpected error", e);
-                      promise.reject(UNEXPECTED, "Unexpected error");
-                    }
-                  }
+            (requestCode, resultCode, data) ->
+                    mStripe.onSetupResult(
+                            requestCode,
+                            data,
+                            new ApiResultCallback<SetupIntentResult>() {
+                              @Override
+                              public void onSuccess(@NonNull SetupIntentResult result) {
+                                try {
+                                  switch (result.getIntent().getStatus()) {
+                                    case Canceled:
+                                      // The Setup Intent was canceled, so reject the promise with a predefined
+                                      // code.
+                                      promise.reject(CANCELLED, "The SetupIntent was canceled by the user.");
+                                      break;
+                                    case RequiresAction:
+                                    case RequiresPaymentMethod:
+                                      promise.reject(AUTHENTICATION_FAILED, "The user failed authentication.");
+                                      break;
+                                    case Succeeded:
+                                      promise.resolve(convertSetupIntentResultToWritableMap(result));
+                                      break;
+                                    case RequiresCapture:
+                                    case RequiresConfirmation:
+                                    default:
+                                      promise.reject(UNEXPECTED, "Unexpected state");
+                                  }
+                                } catch (Exception e) {
+                                  Log.e(TAG, "Unexpected error", e);
+                                  promise.reject(UNEXPECTED, "Unexpected error");
+                                }
+                              }
 
-                  @Override
-                  public void onError(@NonNull Exception e) {
-                    Errors.raiseFlutterError(e, promise);
-                  }
-                });
+                              @Override
+                              public void onError(@NonNull Exception e) {
+                                Errors.raiseFlutterError(e, promise);
+                              }
+                            });
 
     if (!hasSetupResultListener.getAndSet(true)) {
       activityRegistry.addListener(ael);
     }
 
     promise.setWhenComplete(
-        () -> {
-          if (activityRegistry.removeListener(ael)) {
-            hasSetupResultListener.set(false);
-          }
-        });
+            () -> {
+              if (activityRegistry.removeListener(ael)) {
+                hasSetupResultListener.set(false);
+              }
+            });
   }
 
   @ReactMethod
@@ -410,19 +411,19 @@ public class StripeModule {
     PaymentMethodCreateParams pmcp = extractPaymentMethodCreateParams(options);
 
     mStripe.createPaymentMethod(
-        pmcp,
-        new ApiResultCallback<PaymentMethod>() {
+            pmcp,
+            new ApiResultCallback<PaymentMethod>() {
 
-          @Override
-          public void onError(@NonNull Exception error) {
-            promise.reject(toErrorCode(error), error.getMessage());
-          }
+              @Override
+              public void onError(@NonNull Exception error) {
+                promise.reject(toErrorCode(error), error.getMessage());
+              }
 
-          @Override
-          public void onSuccess(PaymentMethod paymentMethod) {
-            promise.resolve(convertPaymentMethodToWritableMap(paymentMethod));
-          }
-        });
+              @Override
+              public void onSuccess(PaymentMethod paymentMethod) {
+                promise.resolve(convertPaymentMethodToWritableMap(paymentMethod));
+              }
+            });
   }
 
   @ReactMethod
@@ -432,36 +433,36 @@ public class StripeModule {
     ArgCheck.nonNull(sourceParams);
 
     mStripe.createSource(
-        sourceParams,
-        new ApiResultCallback<Source>() {
-          @Override
-          public void onError(@NonNull Exception error) {
-            promise.reject(toErrorCode(error));
-          }
-
-          @Override
-          public void onSuccess(Source source) {
-            if (Source.SourceFlow.REDIRECT.equals(source.getFlow())) {
-              if (activity == null) {
-                promise.reject(
-                    getErrorCode(mErrorCodes, "activityUnavailable"),
-                    getDescription(mErrorCodes, "activityUnavailable"));
-              } else {
-                mCreateSourcePromise = promise;
-                mCreatedSource = source;
-                //            String redirectUrl = source.getRedirect().getUrl();
-                //            Intent browserIntent = new Intent(activity, OpenBrowserActivity.class)
-                //                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                // Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                //                .putExtra(OpenBrowserActivity.EXTRA_URL, redirectUrl);
-                //            activity.startActivity(browserIntent);
-                // TODO
+            sourceParams,
+            new ApiResultCallback<Source>() {
+              @Override
+              public void onError(@NonNull Exception error) {
+                promise.reject(toErrorCode(error));
               }
-            } else {
-              promise.resolve(convertSourceToWritableMap(source));
-            }
-          }
-        });
+
+              @Override
+              public void onSuccess(Source source) {
+                if (source.getRedirect() != null) {
+                  if (activity == null) {
+                    promise.reject(
+                            getErrorCode(mErrorCodes, "activityUnavailable"),
+                            getDescription(mErrorCodes, "activityUnavailable"));
+                  } else {
+                    mCreateSourcePromise = promise;
+                    mCreatedSource = source;
+                    //            String redirectUrl = source.getRedirect().getUrl();
+                    //            Intent browserIntent = new Intent(activity, OpenBrowserActivity.class)
+                    //                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                    // Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    //                .putExtra(OpenBrowserActivity.EXTRA_URL, redirectUrl);
+                    //            activity.startActivity(browserIntent);
+                    // TODO
+                  }
+                } else {
+                  promise.resolve(convertSourceToWritableMap(source));
+                }
+              }
+            });
   }
 
   private ConfirmSetupIntentParams extractConfirmSetupIntentParams(final ReadableMap options) {
@@ -476,8 +477,8 @@ public class StripeModule {
 
     if (paymentMethod != null) {
       csip =
-          ConfirmSetupIntentParams.create(
-              extractPaymentMethodCreateParams(paymentMethod), clientSecret, returnURL);
+              ConfirmSetupIntentParams.create(
+                      extractPaymentMethodCreateParams(paymentMethod), clientSecret, returnURL);
     } else if (paymentMethodId != null) {
       csip = ConfirmSetupIntentParams.create(paymentMethodId, clientSecret, returnURL);
     }
@@ -511,15 +512,15 @@ public class StripeModule {
 
       PaymentMethodCreateParams pmcp = extractPaymentMethodCreateParams(paymentMethod);
       cpip =
-          ConfirmPaymentIntentParams.createWithPaymentMethodCreateParams(
-              pmcp, clientSecret, returnURL, savePaymentMethod, extraParams);
+              ConfirmPaymentIntentParams.createWithPaymentMethodCreateParams(
+                      pmcp, clientSecret, returnURL, savePaymentMethod, extraParams);
 
       // Create with Payment Method ID
     } else if (paymentMethodId != null) {
 
       cpip =
-          ConfirmPaymentIntentParams.createWithPaymentMethodId(
-              paymentMethodId, clientSecret, returnURL, savePaymentMethod, extraParams);
+              ConfirmPaymentIntentParams.createWithPaymentMethodId(
+                      paymentMethodId, clientSecret, returnURL, savePaymentMethod, extraParams);
 
       // Create with Source
       /**
@@ -581,23 +582,23 @@ public class StripeModule {
 
       if (addressParams != null) {
         address =
-            new Address.Builder()
-                .setCity(getStringOrNull(addressParams, "city"))
-                .setCountry(addressParams.getString("country"))
-                .setLine1(getStringOrNull(addressParams, "line1"))
-                .setLine2(getStringOrNull(addressParams, "line2"))
-                .setPostalCode(getStringOrNull(addressParams, "postalCode"))
-                .setState(getStringOrNull(addressParams, "state"))
-                .build();
+                new Address.Builder()
+                        .setCity(getStringOrNull(addressParams, "city"))
+                        .setCountry(addressParams.getString("country"))
+                        .setLine1(getStringOrNull(addressParams, "line1"))
+                        .setLine2(getStringOrNull(addressParams, "line2"))
+                        .setPostalCode(getStringOrNull(addressParams, "postalCode"))
+                        .setState(getStringOrNull(addressParams, "state"))
+                        .build();
       }
 
       billingDetails =
-          new PaymentMethod.BillingDetails.Builder()
-              .setAddress(address)
-              .setEmail(getStringOrNull(billingDetailsParams, "email"))
-              .setName(getStringOrNull(billingDetailsParams, "name"))
-              .setPhone(getStringOrNull(billingDetailsParams, "phone"))
-              .build();
+              new PaymentMethod.BillingDetails.Builder()
+                      .setAddress(address)
+                      .setEmail(getStringOrNull(billingDetailsParams, "email"))
+                      .setName(getStringOrNull(billingDetailsParams, "name"))
+                      .setPhone(getStringOrNull(billingDetailsParams, "phone"))
+                      .build();
     }
 
     if (cardParams != null) {
@@ -606,12 +607,12 @@ public class StripeModule {
         card = PaymentMethodCreateParams.Card.create(token);
       } else {
         card =
-            new PaymentMethodCreateParams.Card.Builder()
-                .setCvc(cardParams.getString("cvc"))
-                .setExpiryMonth(cardParams.getInt("expMonth"))
-                .setExpiryYear(cardParams.getInt("expYear"))
-                .setNumber(cardParams.getString("number"))
-                .build();
+                new PaymentMethodCreateParams.Card.Builder()
+                        .setCvc(cardParams.getString("cvc"))
+                        .setExpiryMonth(cardParams.getInt("expMonth"))
+                        .setExpiryYear(cardParams.getInt("expYear"))
+                        .setNumber(cardParams.getString("number"))
+                        .build();
       }
     }
 
@@ -624,64 +625,64 @@ public class StripeModule {
     switch (sourceType) {
       case "alipay":
         sourceParams =
-            SourceParams.createAlipaySingleUseParams(
-                options.getInt("amount"),
-                options.getString("currency"),
-                getStringOrNull(options, "name"),
-                getStringOrNull(options, "email"),
-                options.getString("returnURL"));
+                SourceParams.createAlipaySingleUseParams(
+                        options.getInt("amount"),
+                        options.getString("currency"),
+                        getStringOrNull(options, "name"),
+                        getStringOrNull(options, "email"),
+                        options.getString("returnURL"));
         break;
       case "bancontact":
         sourceParams =
-            SourceParams.createBancontactParams(
-                options.getInt("amount"),
-                options.getString("name"),
-                options.getString("returnURL"),
-                getStringOrNull(options, "statementDescriptor"),
-                options.getString("preferredLanguage"));
+                SourceParams.createBancontactParams(
+                        options.getInt("amount"),
+                        options.getString("name"),
+                        options.getString("returnURL"),
+                        getStringOrNull(options, "statementDescriptor"),
+                        options.getString("preferredLanguage"));
         break;
       case "giropay":
         sourceParams =
-            SourceParams.createGiropayParams(
-                options.getInt("amount"),
-                options.getString("name"),
-                options.getString("returnURL"),
-                getStringOrNull(options, "statementDescriptor"));
+                SourceParams.createGiropayParams(
+                        options.getInt("amount"),
+                        options.getString("name"),
+                        options.getString("returnURL"),
+                        getStringOrNull(options, "statementDescriptor"));
         break;
       case "ideal":
         sourceParams =
-            SourceParams.createIdealParams(
-                options.getInt("amount"),
-                options.getString("name"),
-                options.getString("returnURL"),
-                getStringOrNull(options, "statementDescriptor"),
-                getStringOrNull(options, "bank"));
+                SourceParams.createIdealParams(
+                        options.getInt("amount"),
+                        options.getString("name"),
+                        options.getString("returnURL"),
+                        getStringOrNull(options, "statementDescriptor"),
+                        getStringOrNull(options, "bank"));
         break;
       case "sepaDebit":
         sourceParams =
-            SourceParams.createSepaDebitParams(
-                options.getString("name"),
-                options.getString("iban"),
-                getStringOrNull(options, "addressLine1"),
-                options.getString("city"),
-                options.getString("postalCode"),
-                options.getString("country"));
+                SourceParams.createSepaDebitParams(
+                        options.getString("name"),
+                        options.getString("iban"),
+                        getStringOrNull(options, "addressLine1"),
+                        options.getString("city"),
+                        options.getString("postalCode"),
+                        options.getString("country"));
         break;
       case "sofort":
         sourceParams =
-            SourceParams.createSofortParams(
-                options.getInt("amount"),
-                options.getString("returnURL"),
-                options.getString("country"),
-                getStringOrNull(options, "statementDescriptor"));
+                SourceParams.createSofortParams(
+                        options.getInt("amount"),
+                        options.getString("returnURL"),
+                        options.getString("country"),
+                        getStringOrNull(options, "statementDescriptor"));
         break;
       case "threeDSecure":
         sourceParams =
-            SourceParams.createThreeDSecureParams(
-                options.getInt("amount"),
-                options.getString("currency"),
-                options.getString("returnURL"),
-                options.getString("card"));
+                SourceParams.createThreeDSecureParams(
+                        options.getInt("amount"),
+                        options.getString("currency"),
+                        options.getString("returnURL"),
+                        options.getString("card"));
         break;
       case "card":
         sourceParams = SourceParams.createCardParams(Converters.createCard(options));
@@ -698,8 +699,8 @@ public class StripeModule {
 
     if (redirectData == null) {
       mCreateSourcePromise.reject(
-          getErrorCode(mErrorCodes, "redirectCancelled"),
-          getDescription(mErrorCodes, "redirectCancelled"));
+              getErrorCode(mErrorCodes, "redirectCancelled"),
+              getDescription(mErrorCodes, "redirectCancelled"));
       mCreatedSource = null;
       mCreateSourcePromise = null;
       return;
@@ -708,8 +709,8 @@ public class StripeModule {
     final String clientSecret = redirectData.getQueryParameter("client_secret");
     if (!mCreatedSource.getClientSecret().equals(clientSecret)) {
       mCreateSourcePromise.reject(
-          getErrorCode(mErrorCodes, "redirectNoSource"),
-          getDescription(mErrorCodes, "redirectNoSource"));
+              getErrorCode(mErrorCodes, "redirectNoSource"),
+              getDescription(mErrorCodes, "redirectNoSource"));
       mCreatedSource = null;
       mCreateSourcePromise = null;
       return;
@@ -718,8 +719,8 @@ public class StripeModule {
     final String sourceId = redirectData.getQueryParameter("source");
     if (!mCreatedSource.getId().equals(sourceId)) {
       mCreateSourcePromise.reject(
-          getErrorCode(mErrorCodes, "redirectWrongSourceId"),
-          getDescription(mErrorCodes, "redirectWrongSourceId"));
+              getErrorCode(mErrorCodes, "redirectWrongSourceId"),
+              getDescription(mErrorCodes, "redirectWrongSourceId"));
       mCreatedSource = null;
       mCreateSourcePromise = null;
       return;
@@ -745,21 +746,21 @@ public class StripeModule {
       protected void onPostExecute(Source source) {
         if (source != null) {
           switch (source.getStatus()) {
-            case Source.SourceStatus.CHARGEABLE:
-            case Source.SourceStatus.CONSUMED:
+            case Chargeable:
+            case Consumed:
               promise.resolve(convertSourceToWritableMap(source));
               break;
-            case Source.SourceStatus.CANCELED:
+            case Canceled:
               promise.reject(
-                  getErrorCode(mErrorCodes, "redirectCancelled"),
-                  getDescription(mErrorCodes, "redirectCancelled"));
+                      getErrorCode(mErrorCodes, "redirectCancelled"),
+                      getDescription(mErrorCodes, "redirectCancelled"));
               break;
-            case Source.SourceStatus.PENDING:
-            case Source.SourceStatus.FAILED:
-            default:
+            case Failed:
+            case Pending:
               promise.reject(
-                  getErrorCode(mErrorCodes, "redirectFailed"),
-                  getDescription(mErrorCodes, "redirectFailed"));
+                      getErrorCode(mErrorCodes, "redirectFailed"),
+                      getDescription(mErrorCodes, "redirectFailed"));
+              break;
           }
         }
       }
