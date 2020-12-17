@@ -1,4 +1,4 @@
-package com.example.example
+package de.jonasbark.stripepaymentexample
 
 import io.flutter.embedding.android.FlutterActivity
 

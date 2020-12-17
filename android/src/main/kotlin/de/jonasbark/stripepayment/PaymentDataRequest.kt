@@ -1,4 +1,4 @@
-package de.jonasbark.stripe_payment
+package de.jonasbark.stripepayment
 
 import com.google.android.gms.wallet.PaymentDataRequest
 import com.stripe.android.GooglePayConfig
