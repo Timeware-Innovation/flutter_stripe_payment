@@ -107,7 +107,7 @@ class StripeDialog : DialogFragment() {
             }
         } else {
             view?.let {
-                Snackbar.make(it, "The card info you entered is not correct", Snackbar.LENGTH_LONG)
+                Snackbar.make(it, R.string.card_generic_error_message, Snackbar.LENGTH_LONG)
                     .show()
             }
         }
