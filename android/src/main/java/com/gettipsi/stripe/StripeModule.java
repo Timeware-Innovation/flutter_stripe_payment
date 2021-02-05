@@ -182,7 +182,7 @@ public class StripeModule {
 
   @ReactMethod
   public void setStripeAccount(final String stripeAccount) {
-    ArgCheck.notEmptyString(mPublicKey);
+    // ArgCheck.notEmptyString(mPublicKey); // commented out because when stripeAccount is null, it throws
     if (stripeAccount == null) {
       mStripe = new Stripe(applicationContext, mPublicKey);
     } else {
