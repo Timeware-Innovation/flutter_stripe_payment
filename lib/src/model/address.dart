@@ -22,6 +22,6 @@ class Address {
     this.state,
   });
 
-  factory Address.fromJson(Map json) => _$AddressFromJson(json);
+  factory Address.fromJson(Map<String, dynamic> json) => _$AddressFromJson(json);
   Map toJson() => _$AddressToJson(this);
 }

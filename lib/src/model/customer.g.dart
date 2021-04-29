@@ -11,7 +11,9 @@ Customer _$CustomerFromJson(Map json) {
     id: json['id'] as String,
     address: json['address'] == null
         ? null
-        : Address.fromJson(json['address'] as Map),
+        : Address.fromJson((json['address'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     description: json['description'] as String,
     email: json['email'] as String,
     metadata: (json['metadata'] as Map)?.map(

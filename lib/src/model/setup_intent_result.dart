@@ -14,7 +14,6 @@ class SetupIntentResult {
     this.paymentIntentId,
   });
 
-  factory SetupIntentResult.fromJson(Map json) =>
-      _$SetupIntentResultFromJson(json);
+  factory SetupIntentResult.fromJson(Map<String, dynamic> json) => _$SetupIntentResultFromJson(json);
   Map toJson() => _$SetupIntentResultToJson(this);
 }

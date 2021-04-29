@@ -18,6 +18,6 @@ class BillingDetails {
     this.phone,
   });
 
-  factory BillingDetails.fromJson(Map json) => _$BillingDetailsFromJson(json);
+  factory BillingDetails.fromJson(Map<String, dynamic> json) => _$BillingDetailsFromJson(json);
   Map toJson() => _$BillingDetailsToJson(this);
 }

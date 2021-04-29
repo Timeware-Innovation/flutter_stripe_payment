@@ -10,7 +10,9 @@ PaymentIntent _$PaymentIntentFromJson(Map json) {
   return PaymentIntent(
     paymentMethod: json['paymentMethod'] == null
         ? null
-        : PaymentMethodRequest.fromJson(json['paymentMethod'] as Map),
+        : PaymentMethodRequest.fromJson((json['paymentMethod'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     paymentMethodId: json['paymentMethodId'] as String,
     returnURL: json['returnURL'] as String,
     clientSecret: json['clientSecret'] as String,

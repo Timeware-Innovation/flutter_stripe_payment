@@ -24,7 +24,7 @@ class Token {
     this.extra,
   });
 
-  factory Token.fromJson(Map json) => _$TokenFromJson(json);
+  factory Token.fromJson(Map<String, dynamic> json) => _$TokenFromJson(json);
   Map toJson() => _$TokenToJson(this);
 }
 
@@ -35,6 +35,6 @@ class TokenExtra {
 
   TokenExtra(this.billingContact, this.shippingContact);
 
-  factory TokenExtra.fromJson(Map json) => _$TokenExtraFromJson(json);
+  factory TokenExtra.fromJson(Map<String, dynamic> json) => _$TokenExtraFromJson(json);
   Map toJson() => _$TokenExtraToJson(this);
 }

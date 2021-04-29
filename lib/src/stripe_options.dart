@@ -15,6 +15,6 @@ class StripeOptions {
     this.androidPayMode,
   });
 
-  factory StripeOptions.fromJson(Map json) => _$StripeOptionsFromJson(json);
+  factory StripeOptions.fromJson(Map<String, dynamic> json) => _$StripeOptionsFromJson(json);
   Map toJson() => _$StripeOptionsToJson(this);
 }

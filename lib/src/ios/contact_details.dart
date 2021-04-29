@@ -29,6 +29,6 @@ class ContactDetails {
     this.postalCode,
   });
 
-  factory ContactDetails.fromJson(Map json) => _$ContactDetailsFromJson(json);
+  factory ContactDetails.fromJson(Map<String, dynamic> json) => _$ContactDetailsFromJson(json);
   Map toJson() => _$ContactDetailsToJson(this);
 }
