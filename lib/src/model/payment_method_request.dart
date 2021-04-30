@@ -21,5 +21,5 @@ class PaymentMethodRequest {
   }) : assert(card != null || token != null);
 
   factory PaymentMethodRequest.fromJson(Map<String, dynamic> json) => _$PaymentMethodRequestFromJson(json);
-  Map toJson() => _$PaymentMethodRequestToJson(this);
+  Map<String, dynamic> toJson() => _$PaymentMethodRequestToJson(this);
 }

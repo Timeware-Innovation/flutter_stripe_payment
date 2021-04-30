@@ -25,5 +25,5 @@ class Customer {
   });
 
   factory Customer.fromJson(Map<String, dynamic> json) => _$CustomerFromJson(json);
-  Map toJson() => _$CustomerToJson(this);
+  Map<String, dynamic> toJson() => _$CustomerToJson(this);
 }

@@ -43,5 +43,5 @@ class CreditCard {
   });
 
   factory CreditCard.fromJson(Map<String, dynamic> json) => _$CreditCardFromJson(json);
-  Map toJson() => _$CreditCardToJson(this);
+  Map<String, dynamic> toJson() => _$CreditCardToJson(this);
 }

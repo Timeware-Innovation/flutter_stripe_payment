@@ -43,5 +43,5 @@ class AndroidPayPaymentRequest {
   });
 
   factory AndroidPayPaymentRequest.fromJson(Map<String, dynamic> json) => _$AndroidPayPaymentRequestFromJson(json);
-  Map toJson() => _$AndroidPayPaymentRequestToJson(this);
+  Map<String, dynamic> toJson() => _$AndroidPayPaymentRequestToJson(this);
 }

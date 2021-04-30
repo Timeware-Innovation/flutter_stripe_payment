@@ -15,5 +15,5 @@ class SetupIntentResult {
   });
 
   factory SetupIntentResult.fromJson(Map<String, dynamic> json) => _$SetupIntentResultFromJson(json);
-  Map toJson() => _$SetupIntentResultToJson(this);
+  Map<String, dynamic> toJson() => _$SetupIntentResultToJson(this);
 }

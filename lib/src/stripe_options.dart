@@ -16,5 +16,5 @@ class StripeOptions {
   });
 
   factory StripeOptions.fromJson(Map<String, dynamic> json) => _$StripeOptionsFromJson(json);
-  Map toJson() => _$StripeOptionsToJson(this);
+  Map<String, dynamic> toJson() => _$StripeOptionsToJson(this);
 }
