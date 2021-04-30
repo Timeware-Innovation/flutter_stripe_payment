@@ -24,6 +24,6 @@ class Customer {
     this.phone,
   });
 
-  factory Customer.fromJson(Map json) => _$CustomerFromJson(json);
-  Map toJson() => _$CustomerToJson(this);
+  factory Customer.fromJson(Map<String, dynamic> json) => _$CustomerFromJson(json);
+  Map<String, dynamic> toJson() => _$CustomerToJson(this);
 }

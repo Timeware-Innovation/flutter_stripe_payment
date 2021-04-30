@@ -21,6 +21,6 @@ class PaymentIntent {
     this.metadata,
   });
 
-  factory PaymentIntent.fromJson(Map json) => _$PaymentIntentFromJson(json);
-  Map toJson() => _$PaymentIntentToJson(this);
+  factory PaymentIntent.fromJson(Map<String, dynamic> json) => _$PaymentIntentFromJson(json);
+  Map<String, dynamic> toJson() => _$PaymentIntentToJson(this);
 }

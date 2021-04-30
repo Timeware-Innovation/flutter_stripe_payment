@@ -10,10 +10,19 @@ PaymentMethodRequest _$PaymentMethodRequestFromJson(Map json) {
   return PaymentMethodRequest(
     billingAddress: json['billingAddress'] == null
         ? null
-        : Address.fromJson(json['billingAddress'] as Map),
-    card:
-        json['card'] == null ? null : CreditCard.fromJson(json['card'] as Map),
-    token: json['token'] == null ? null : Token.fromJson(json['token'] as Map),
+        : Address.fromJson((json['billingAddress'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
+    card: json['card'] == null
+        ? null
+        : CreditCard.fromJson((json['card'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
+    token: json['token'] == null
+        ? null
+        : Token.fromJson((json['token'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     metadata: (json['metadata'] as Map)?.map(
       (k, e) => MapEntry(k as String, e as String),
     ),

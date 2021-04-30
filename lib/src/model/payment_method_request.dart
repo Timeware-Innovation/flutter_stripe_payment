@@ -12,7 +12,6 @@ class PaymentMethodRequest {
   final CreditCard card;
   final Token token;
   final Map<String, String> metadata;
-  
 
   const PaymentMethodRequest({
     this.billingAddress,
@@ -21,7 +20,6 @@ class PaymentMethodRequest {
     this.metadata,
   }) : assert(card != null || token != null);
 
-  factory PaymentMethodRequest.fromJson(Map json) =>
-      _$PaymentMethodRequestFromJson(json);
-  Map toJson() => _$PaymentMethodRequestToJson(this);
+  factory PaymentMethodRequest.fromJson(Map<String, dynamic> json) => _$PaymentMethodRequestFromJson(json);
+  Map<String, dynamic> toJson() => _$PaymentMethodRequestToJson(this);
 }

@@ -10,9 +10,14 @@ PaymentMethod _$PaymentMethodFromJson(Map json) {
   return PaymentMethod(
     billingDetails: json['billingDetails'] == null
         ? null
-        : BillingDetails.fromJson(json['billingDetails'] as Map),
-    card:
-        json['card'] == null ? null : CreditCard.fromJson(json['card'] as Map),
+        : BillingDetails.fromJson((json['billingDetails'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
+    card: json['card'] == null
+        ? null
+        : CreditCard.fromJson((json['card'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     created: json['created'] as num,
     customerId: json['customerId'] as String,
     id: json['id'] as String,

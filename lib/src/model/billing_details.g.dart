@@ -10,7 +10,9 @@ BillingDetails _$BillingDetailsFromJson(Map json) {
   return BillingDetails(
     address: json['address'] == null
         ? null
-        : Address.fromJson(json['address'] as Map),
+        : Address.fromJson((json['address'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     email: json['email'] as String,
     name: json['name'] as String,
     phone: json['phone'] as String,

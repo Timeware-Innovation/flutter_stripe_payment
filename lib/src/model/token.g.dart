@@ -11,14 +11,19 @@ Token _$TokenFromJson(Map json) {
     bankAccount: json['bankAccount'] == null
         ? null
         : BankAccount.fromJson(json['bankAccount'] as Map),
-    card:
-        json['card'] == null ? null : CreditCard.fromJson(json['card'] as Map),
+    card: json['card'] == null
+        ? null
+        : CreditCard.fromJson((json['card'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     created: (json['created'] as num)?.toDouble(),
     livemode: json['livemode'] as bool,
     tokenId: json['tokenId'] as String,
     extra: json['extra'] == null
         ? null
-        : TokenExtra.fromJson(json['extra'] as Map),
+        : TokenExtra.fromJson((json['extra'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
   );
 }
 
@@ -44,10 +49,14 @@ TokenExtra _$TokenExtraFromJson(Map json) {
   return TokenExtra(
     json['billingContact'] == null
         ? null
-        : ContactDetails.fromJson(json['billingContact'] as Map),
+        : ContactDetails.fromJson((json['billingContact'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
     json['shippingContact'] == null
         ? null
-        : ContactDetails.fromJson(json['shippingContact'] as Map),
+        : ContactDetails.fromJson((json['shippingContact'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
   );
 }
 
